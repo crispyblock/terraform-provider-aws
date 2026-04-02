@@ -2,8 +2,6 @@
 # "SPDX-License-Identifier: MPL-2.0"
 
 on:
-  schedule:
-    - cron: '0 * * * *'
   workflow_dispatch:
 name: Firewatch
 jobs:
