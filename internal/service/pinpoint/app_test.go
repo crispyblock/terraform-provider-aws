@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	awstypes "github.com/aws/aws-sdk-go-v2/service/pinpoint/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/id"
+	sdkid "github.com/hashicorp/terraform-plugin-sdk/v2/helper/id"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
@@ -97,6 +98,14 @@ func TestAccPinpointApp_disappears(t *testing.T) {
 					acctest.CheckSDKResourceDisappears(ctx, t, tfpinpoint.ResourceApp(), resourceName),
 				),
 				ExpectNonEmptyPlan: true,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionCreate),
+					},
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionCreate),
+					},
+				},
 			},
 		},
 	})
@@ -118,7 +127,7 @@ func TestAccPinpointApp_nameGenerated(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckAppExists(ctx, t, resourceName, &application),
 					acctest.CheckResourceAttrNameGenerated(resourceName, names.AttrName),
-					resource.TestCheckResourceAttr(resourceName, names.AttrNamePrefix, id.UniqueIdPrefix),
+					resource.TestCheckResourceAttr(resourceName, names.AttrNamePrefix, sdkid.UniqueIdPrefix),
 				),
 			},
 		},
@@ -289,7 +298,7 @@ func TestAccPinpointApp_limits(t *testing.T) {
 						knownvalue.ObjectExact(map[string]knownvalue.Check{
 							"daily":               knownvalue.Int64Exact(3),
 							"maximum_duration":    knownvalue.Int64Exact(600),
-							"messages_per_second": knownvalue.Int64Exact(50),
+							"messages_per_second": knownvalue.Int64Exact(1),
 							"total":               knownvalue.Int64Exact(100),
 						}),
 					})),
@@ -435,7 +444,7 @@ func testAccCheckAppDestroy(ctx context.Context, t *testing.T) resource.TestChec
 				return err
 			}
 
-			return fmt.Errorf("Pinpoint App %s still exists", rs.Primary.ID)
+			return fmt.Errorf("End User Messaging App %s still exists", rs.Primary.ID)
 		}
 
 		return nil
@@ -528,7 +537,7 @@ resource "aws_lambda_function" "test" {
   function_name = %[1]q
   role          = aws_iam_role.test.arn
   handler       = "lambdapinpoint.handler"
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs24.x"
   publish       = true
 }
 
@@ -586,7 +595,7 @@ resource "aws_pinpoint_app" "test" {
   limits {
     daily               = 3
     maximum_duration    = 600
-    messages_per_second = 50
+    messages_per_second = 1
     total               = 100
   }
 }

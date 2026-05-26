@@ -16,10 +16,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	awstypes "github.com/aws/aws-sdk-go-v2/service/sagemaker/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/id"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
+	"github.com/hashicorp/terraform-provider-aws/internal/create"
 	"github.com/hashicorp/terraform-provider-aws/internal/enum"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
@@ -29,7 +29,10 @@ import (
 	"github.com/hashicorp/terraform-provider-aws/names"
 )
 
-const imageVersionResourcePartCount = 2
+const (
+	imageVersionResourcePartCount = 2
+	mutexLockPrefix               = "sagemaker-image-version-"
+)
 
 // @SDKResource("aws_sagemaker_image_version", name="Image Version")
 func resourceImageVersion() *schema.Resource {
@@ -129,10 +132,11 @@ func resourceImageVersionCreate(ctx context.Context, d *schema.ResourceData, met
 	conn := meta.(*conns.AWSClient).SageMakerClient(ctx)
 
 	name := d.Get("image_name").(string)
+
 	input := sagemaker.CreateImageVersionInput{
 		ImageName:   aws.String(name),
 		BaseImage:   aws.String(d.Get("base_image").(string)),
-		ClientToken: aws.String(id.UniqueId()),
+		ClientToken: aws.String(create.UniqueId(ctx)),
 	}
 
 	if v, ok := d.GetOk("job_type"); ok {
@@ -167,7 +171,11 @@ func resourceImageVersionCreate(ctx context.Context, d *schema.ResourceData, met
 		input.Aliases = flex.ExpandStringValueSet(v.(*schema.Set))
 	}
 
+	lockName := mutexLockPrefix + name
+	conns.GlobalMutexKV.Lock(lockName)
 	out, err := conn.CreateImageVersion(ctx, &input)
+	conns.GlobalMutexKV.Unlock(lockName)
+
 	if err != nil {
 		return sdkdiag.AppendErrorf(diags, "creating SageMaker AI Image Version %s: %s", name, err)
 	}
@@ -317,7 +325,11 @@ func resourceImageVersionDelete(ctx context.Context, d *schema.ResourceData, met
 		ImageName: aws.String(name),
 		Version:   aws.Int32(version),
 	}
+
+	lockName := mutexLockPrefix + name
+	conns.GlobalMutexKV.Lock(lockName)
 	_, err = conn.DeleteImageVersion(ctx, &input)
+	conns.GlobalMutexKV.Unlock(lockName)
 
 	if errs.IsAErrorMessageContains[*awstypes.ResourceNotFound](err, "does not exist") {
 		return diags

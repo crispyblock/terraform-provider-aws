@@ -27,8 +27,8 @@ func TestAccRoute53Record_Identity_basic(t *testing.T) {
 
 	var v awstypes.ResourceRecordSet
 	resourceName := "aws_route53_record.test"
-	zoneName := acctest.RandomDomain()
-	recordName := zoneName.RandomSubdomain()
+	zoneName := acctest.RandomDomain(t)
+	recordName := zoneName.RandomSubdomain(t)
 
 	acctest.ParallelTest(ctx, t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
@@ -91,7 +91,6 @@ func TestAccRoute53Record_Identity_basic(t *testing.T) {
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New("zone_id"), knownvalue.NotNull()),
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New(names.AttrName), knownvalue.NotNull()),
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New(names.AttrType), knownvalue.NotNull()),
-						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New("set_identifier"), knownvalue.NotNull()),
 					},
 				},
 			},
@@ -111,7 +110,6 @@ func TestAccRoute53Record_Identity_basic(t *testing.T) {
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New("zone_id"), knownvalue.NotNull()),
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New(names.AttrName), knownvalue.NotNull()),
 						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New(names.AttrType), knownvalue.NotNull()),
-						plancheck.ExpectKnownValue(resourceName, tfjsonpath.New("set_identifier"), knownvalue.NotNull()),
 					},
 				},
 			},
@@ -125,8 +123,8 @@ func TestAccRoute53Record_Identity_ExistingResource_basic(t *testing.T) {
 
 	var v awstypes.ResourceRecordSet
 	resourceName := "aws_route53_record.test"
-	zoneName := acctest.RandomDomain()
-	recordName := zoneName.RandomSubdomain()
+	zoneName := acctest.RandomDomain(t)
+	recordName := zoneName.RandomSubdomain(t)
 
 	acctest.ParallelTest(ctx, t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
@@ -190,8 +188,8 @@ func TestAccRoute53Record_Identity_ExistingResource_noRefreshNoChange(t *testing
 
 	var v awstypes.ResourceRecordSet
 	resourceName := "aws_route53_record.test"
-	zoneName := acctest.RandomDomain()
-	recordName := zoneName.RandomSubdomain()
+	zoneName := acctest.RandomDomain(t)
+	recordName := zoneName.RandomSubdomain(t)
 
 	acctest.ParallelTest(ctx, t, resource.TestCase{
 		TerraformVersionChecks: []tfversion.TerraformVersionCheck{
